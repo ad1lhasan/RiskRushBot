@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Approval Prediction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e5;
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+            background-image: url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3z" fill="%231e2a44" fill-opacity="0.1" fill-rule="evenodd"/%3E%3C/svg%3E');
+            animation: backgroundFlow 15s ease infinite;
+            position: relative;
+        }
+
+        body:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 123, 255, 0.05), transparent 70%);
+            animation: bgGlow 8s ease infinite;
+        }
+
+        @keyframes backgroundFlow {
+            0% { background-position: 0 0; }
+            50% { background-position: 200px 200px; }
+            100% { background-position: 0 0; }
+        }
+
+        @keyframes bgGlow {
+            0% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+            100% { opacity: 0.3; transform: scale(1); }
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #1e1e2e;
+            padding: 40px 25px;
+            height: 100vh;
+            position: fixed;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+            transform: translateX(-100%);
+            animation: slideInSidebar 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+            border-right: 1px solid rgba(0, 123, 255, 0.1);
+        }
+
+        @keyframes slideInSidebar {
+            0% { transform: translateX(-100%); opacity: 0; }
+            70% { transform: translateX(10px); opacity: 1; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        .sidebar h3 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 50px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #007bff, #00c4ff, #007bff);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientFlow 4s ease infinite, textPop 0.8s ease forwards;
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes textPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            color: #b0b0c5;
+            text-decoration: none;
+            padding: 14px 20px;
+            margin: 12px 0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            animation: linkBounce 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+            animation-delay: calc(0.15s * var(--i));
+        }
+
+        .sidebar a:nth-child(2) { --i: 1; }
+        .sidebar a:nth-child(3) { --i: 2; }
+        .sidebar a:nth-child(4) { --i: 3; }
+
+        @keyframes linkBounce {
+            0% { opacity: 0; transform: translateY(30px); }
+            60% { opacity: 1; transform: translateY(-5px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .sidebar a:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(0, 123, 255, 0.3), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .sidebar a:hover:before {
+            left: 100%;
+        }
+
+        .sidebar a:hover {
+            background: #2a2a3c;
+            color: #fff;
+            transform: translateX(10px) scale(1.02);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h2 {
+            font-size: 38px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-align: center;
+            color: #fff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #007bff, #00c4ff, #007bff);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientFlow 4s ease infinite, titleZoom 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+
+        @keyframes titleZoom {
+            0% { transform: scale(0.5) rotate(-5deg); opacity: 0; }
+            70% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .container {
+            background: #252537;
+            padding: 50px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0, 123, 255, 0.15);
+            animation: containerSpin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+
+        @keyframes containerSpin {
+            0% { transform: scale(0.8) rotate(-10deg); opacity: 0; }
+            70% { transform: scale(1.05) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .container:before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 123, 255, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+            animation: pulseGlow 5s ease infinite;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1) rotate(0deg); opacity: 0.4; }
+            50% { transform: scale(1.15) rotate(10deg); opacity: 0.7; }
+            100% { transform: scale(1) rotate(0deg); opacity: 0.4; }
+        }
+
+        .container:hover {
+            transform: translateY(-12px) scale(1.03) rotate(1deg);
+            box-shadow: 0 25px 60px rgba(0, 123, 255, 0.2);
+        }
+
+        form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 400;
+            margin-top: 25px;
+            color: #c0c0d0;
+            width: 100%;
+            max-width: 550px;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            opacity: 0;
+            animation: fieldTwist 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+            animation-delay: calc(0.15s * var(--i));
+        }
+
+        input, select {
+            width: 100%;
+            max-width: 550px;
+            padding: 16px;
+            margin: 12px 0 20px;
+            border: none;
+            border-radius: 12px;
+            background: #2a2a3c;
+            color: #e0e0e5;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            animation: fieldTwist 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+            animation-delay: calc(0.15s * var(--i));
+        }
+
+        label:nth-child(1), input:nth-child(2), select:nth-child(2) { --i: 1; }
+        label:nth-child(3), input:nth-child(4) { --i: 2; }
+        label:nth-child(5), input:nth-child(6) { --i: 3; }
+        label:nth-child(7), input:nth-child(8) { --i: 4; }
+        label:nth-child(9), select:nth-child(10) { --i: 5; }
+        label:nth-child(11), select:nth-child(12) { --i: 6; }
+
+        @keyframes fieldTwist {
+            0% { opacity: 0; transform: translateY(20px) rotate(-5deg); }
+            60% { opacity: 1; transform: translateY(-5px) rotate(2deg); }
+            100% { opacity: 1; transform: translateY(0) rotate(0deg); }
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            background: #30304e;
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5), inset 0 3px 8px rgba(0, 0, 0, 0.15);
+            transform: scale(1.03) rotate(1deg);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #007bff, #00c4ff);
+            color: #fff;
+            padding: 16px 35px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            position: relative;
+            overflow: hidden;
+            animation: buttonBounce 1.5s ease infinite;
+        }
+
+        @keyframes buttonBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px) scale(1.05); }
+            60% { transform: translateY(-5px) scale(1.02); }
+        }
+
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: all 0.6s ease;
+        }
+
+        .btn:hover:before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            background: linear-gradient(45deg, #0056b3, #0099cc);
+            transform: translateY(-6px) scale(1.1);
+            box-shadow: 0 10px 25px rgba(0, 123, 255, 0.6);
+            animation: none;
+        }
+
+        #chatbot-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: linear-gradient(45deg, #007bff, #00c4ff);
+            color: #fff;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            font-size: 32px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: chatButtonSpin 2s ease infinite;
+        }
+
+        @keyframes chatButtonSpin {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        #chatbot-btn:hover {
+            transform: scale(1.2) rotate(360deg);
+            box-shadow: 0 15px 35px rgba(0, 123, 255, 0.6);
+            animation: none;
+        }
+
+        #chatbox {
+            display: none;
+            position: fixed;
+            bottom: 120px;
+            right: 40px;
+            width: 400px;
+            background: #252537;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            z-index: 1000;
+            flex-direction: column;
+            border: 1px solid rgba(0, 123, 255, 0.15);
+        }
+
+        @keyframes chatboxExplode {
+            0% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+            70% { transform: scale(1.1) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes chatboxImplode {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            30% { transform: scale(1.1) rotate(5deg); opacity: 1; }
+            100% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+        }
+
+        #chatlog {
+            height: 340px;
+            overflow-y: auto;
+            font-size: 15px;
+            padding: 20px;
+            background: #2a2a3c;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            color: #d0d0e0;
+            box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        #chatlog div {
+            margin: 12px 0;
+            word-wrap: break-word;
+            line-height: 1.7;
+            opacity: 0;
+            animation: messagePop 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+
+        @keyframes messagePop {
+            0% { opacity: 0; transform: scale(0.8) translateX(-30px); }
+            70% { opacity: 1; transform: scale(1.05) translateX(5px); }
+            100% { opacity: 1; transform: scale(1) translateX(0); }
+        }
+
+        #chatlog div b {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .suggested-question {
+            color: #00c4ff;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.3s ease;
+        }
+
+        .suggested-question:hover {
+            color: #fff;
+        }
+
+        #userInput {
+            width: 70%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: #2a2a3c;
+            color: #e0e0e5;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        #userInput:focus {
+            outline: none;
+            background: #30304e;
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5), inset 0 3px 8px rgba(0, 0, 0, 0.15);
+            transform: scale(1.03) rotate(1deg);
+        }
+
+        #chatbox button {
+            width: 25%;
+            background: linear-gradient(45deg, #007bff, #00c4ff);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-left: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: sendButtonWobble 1.5s ease infinite;
+        }
+
+        @keyframes sendButtonWobble {
+            0% { transform: rotate(0deg); }
+            15% { transform: rotate(5deg); }
+            30% { transform: rotate(-5deg); }
+            45% { transform: rotate(3deg); }
+            60% { transform: rotate(-3deg); }
+            75% { transform: rotate(1deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        #chatbox button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: all 0.6s ease;
+        }
+
+        #chatbox button:hover:before {
+            left: 100%;
+        }
+
+        #chatbox button:hover {
+            background: linear-gradient(45deg, #0056b3, #0099cc);
+            transform: translateY(-3px) scale(1.1);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.6);
+            animation: none;
+        }
+
+        .chatbox-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            font-size: 13px;
+            color: #b0b0c5;
+            opacity: 0;
+            animation: footerSpin 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards 0.6s;
+        }
+
+        @keyframes footerSpin {
+            0% { opacity: 0; transform: rotate(-10deg) translateY(20px); }
+            70% { opacity: 1; transform: rotate(5deg) translateY(-5px); }
+            100% { opacity: 1; transform: rotate(0deg) translateY(0); }
+        }
+
+        .chatbox-footer select {
+            background: #2a2a3c;
+            color: #e0e0e5;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: selectWiggle 2s ease infinite;
+        }
+
+        @keyframes selectWiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(3deg); }
+            75% { transform: rotate(-3deg); }
+        }
+
+        .chatbox-footer select:hover {
+            background: #30304e;
+            transform: scale(1.1) rotate(0deg);
+            box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
+            animation: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #40405a;
+            margin-top: 20px;
+        }
+
+        .action-buttons button {
+            background: none;
+            border: none;
+            color: #00c4ff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 6px;
+            position: relative;
+            animation: actionBounce 1.5s ease infinite;
+            animation-delay: calc(0.2s * var(--i));
+        }
+
+        .action-buttons button:nth-child(1) { --i: 1; }
+        .action-buttons button:nth-child(2) { --i: 2; }
+
+        @keyframes actionBounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+            60% { transform: translateY(-4px); }
+        }
+
+        .action-buttons button:before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: #00c4ff;
+            transition: all 0.4s ease;
+            transform: translateX(-50%);
+        }
+
+        .action-buttons button:hover:before {
+            width: 100%;
+        }
+
+        .action-buttons button:hover {
+            color: #fff;
+            transform: translateY(-4px) scale(1.05);
+            animation: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h3>Loan Approval App</h3>
+        <a href="#" onclick="alert('Full screen chat coming soon!')">Full Screen Chat</a>
+        <a href="#" onclick="alert('Deep Research coming soon!')">Deep Research</a>
+        <a href="#" onclick="alert('Multi-file chat coming soon!')">Multi-file Chat</a>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <h2>Credit Risk Advisor</h2>
+            <form action="/predict" method="POST">
+                <label for="credit_score">Credit Score</label>
+                <select name="credit_score" required>
+                    <option value="Good">Good (670–850)</option>
+                    <option value="Fair">Fair (580–669)</option>
+                    <option value="Bad">Bad (300–579)</option>
+                </select>
+
+                <label for="income">Annual Income ($)</label>
+                <input type="number" name="income" required placeholder="Enter your income">
+
+                <label for="loan_amount">Loan Amount ($)</label>
+                <input type="number" name="loan_amount" required placeholder="Enter loan amount">
+
+                <label for="loan_term">Loan Term (Months)</label>
+                <input type="number" name="loan_term" required placeholder="Enter loan term">
+
+                <label for="employment_status">Employment Status</label>
+                <select name="employment_status" required>
+                    <option value="Employed">Employed</option>
+                    <option value="Unemployed">Unemployed</option>
+                    <option value="Self-Employed">Self-Employed</option>
+                </select>
+
+                <label for="loan_purpose">Loan Purpose</label>
+                <select name="loan_purpose" required>
+                    <option value="Home">Home</option>
+                    <option value="Car">Car</option>
+                    <option value="Business">Business</option>
+                    <option value="Education">Education</option>
+                </select>
+
+                <button type="submit" class="btn">Predict Approval</button>
+            </form>
+        </div>
+
+        <div id="chatbot-btn" onclick="toggleChat()">💬</div>
+
+        <div id="chatbox" style="display: none;">
+            <div id="chatlog"></div>
+            <div style="display: flex; align-items: center;">
+                <input id="userInput" type="text" placeholder="Ask a question...">
+                <button onclick="sendMessage()">➤</button>
+            </div>
+            <div class="action-buttons">
+                <button onclick="alert('Translate feature coming soon!')">Translate</button>
+                <button onclick="alert('Summarize feature coming soon!')">Summarize</button>
+            </div>
+            <div class="chatbox-footer">
+                <select>
+                    <option value="ENG">ENG</option>
+                    <option value="ES">ES</option>
+                    <option value="FR">FR</option>
+                </select>
+                <span id="timestamp"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Existing Inline Script -->
+    <script>
+        // Mock chatbot responses
+        const chatbotResponses = {
+            "hello": "Hi there! How can I assist you with your loan today?",
+            "how are you": "I'm an AI, so I'm always good! How can I help you?",
+            "loan approval": "I can assist with loan approval questions. Try asking about credit scores, income, or loan terms!",
+            "credit score": "A good credit score (670–850) improves your chances. What's yours?",
+            "help": "I'm here to help with loan predictions or general questions. What do you need?",
+            "what is a good credit score?": "A good credit score is between 670 and 850. It shows lenders you're a reliable borrower.",
+            "how does income affect loan approval?": "Higher income can improve your loan approval chances by showing you can repay the loan.",
+            "what loan term should i choose?": "It depends on your budget. Shorter terms (e.g., 12-36 months) have higher payments but less interest overall.",
+            "default": "Hmm, I’m not sure how to answer that. Could you ask something else?"
+        };
+
+        // Suggested questions
+        const suggestedQuestions = [
+            "What is a good credit score?",
+            "How does income affect loan approval?",
+            "What loan term should I choose?"
+        ];
+
+        let isInitialized = false;
+
+        function toggleChat() {
+            const chatbox = document.getElementById("chatbox");
+            if (chatbox.style.display === "none" || chatbox.style.display === "") {
+                chatbox.style.display = "block";
+                chatbox.style.animation = "chatboxExplode 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards";
+                if (!isInitialized) {
+                    setTimeout(() => {
+                        const log = document.getElementById("chatlog");
+                        log.innerHTML = "<div><b>Bot:</b> Welcome to the Credit Risk Advisor Chatbot! How can I assist you today?</div>";
+                        log.innerHTML += "<div><b>Bot:</b> Try asking one of these:</div>";
+                        suggestedQuestions.forEach(q => {
+                            log.innerHTML += `<div><span class="suggested-question" onclick="askSuggestedQuestion('${q}')">${q}</span></div>`;
+                        });
+                        log.scrollTop = log.scrollHeight;
+                        isInitialized = true;
+                    }, 600);
+                }
+            } else {
+                chatbox.style.animation = "chatboxImplode 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards";
+                setTimeout(() => { chatbox.style.display = "none"; }, 600);
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById("userInput");
+            const msg = input.value.trim().toLowerCase();
+            if (!msg) return;
+
+            const log = document.getElementById("chatlog");
+            log.innerHTML += `<div><b>You:</b> ${msg}</div>`;
+            respondToMessage(msg);
+            input.value = "";
+            updateTimestamp();
+        }
+
+        function askSuggestedQuestion(question) {
+            const log = document.getElementById("chatlog");
+            log.innerHTML += `<div><b>You:</b> ${question}</div>`;
+            respondToMessage(question.toLowerCase());
+            updateTimestamp();
+        }
+
+        function respondToMessage(msg) {
+            const log = document.getElementById("chatlog");
+            setTimeout(() => {
+                const response = chatbotResponses[msg] || chatbotResponses["default"];
+                log.innerHTML += `<div><b>Bot:</b> ${response}</div>`;
+                log.scrollTop = log.scrollHeight;
+            }, 500);
+        }
+
+        function updateTimestamp() {
+            const timestamp = document.getElementById("timestamp");
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const date = now.getDate().toString().padStart(2, '0');
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const year = now.getFullYear();
+            timestamp.textContent = `${hours}:${minutes} ${date}-${month}-${year}`;
+        }
+
+        window.onload = function() {
+            updateTimestamp();
+            document.getElementById("userInput").addEventListener("keypress", function(e) {
+                if (e.key === "Enter") {
+                    sendMessage();
+                }
+            });
+        };
+    </script>
+
+    <!-- External Enhancement Script -->
+    <script src="/static/js/enhancements.js"></script>
+</body>
+</html>
